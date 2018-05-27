@@ -30,14 +30,7 @@ export default {
   name: 'ProjectList',
   data () {
     return {
-      projects: [
-        { name: '项目1' },
-        { name: 'project2' },
-        { name: 'project3' },
-        { name: 'project4' },
-        { name: 'project5' }
-      ],
-      promptText: '新建项目'
+      projects: []
     }
   },
   methods: {
@@ -54,7 +47,7 @@ export default {
       this.$prompt('请输入项目名称', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        inputValue: '新建项目',
+        inputValue: '项目' + (this.projects.length + 1),
         inputValidator: this.validateInput,
         inputErrorMessage: '项目名重复，请重新输入!'
       }).then(({ value }) => {
@@ -62,16 +55,24 @@ export default {
           name: value
         })
         // 在服务器创建一个文件夹
-
-        this.$message({
-          type: 'success',
-          message: value + '创建成功！'
+        let self = this
+        self.axios.get('/project/create', {
+          params: {
+            dir: value
+          }
+        }).then(function (res) {
+          console.log(res.data)
+          let data = res.data
+          if (data.success) {
+            self.$message.success(data.msg)
+          } else {
+            self.$message.warning(data.msg)
+          }
+        }).catch(function (err) {
+          console.log(err)
         })
       }).catch(() => {
-        this.$message({
-          type: 'info',
-          message: '取消输入'
-        })
+        this.$message.info('取消输入')
       })
     },
     deleteProj (index) {
@@ -81,20 +82,50 @@ export default {
         type: 'warning',
         center: true
       }).then(() => {
-        this.projects.splice(index, 1)
         // 在服务器将对应文件夹删除
-
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
+        let self = this
+        self.axios.get('/project/delete', {
+          params: {
+            dir: self.projects[index].name
+          }
+        }).then(function (res) {
+          console.log(res.data)
+          let data = res.data
+          if (data.success) {
+            self.projects.splice(index, 1)
+            self.$message.success(data.msg)
+          } else {
+            self.$message.warning(data.msg)
+          }
+        }).catch(function (err) {
+          console.log(err.msg)
         })
       }).catch(() => {
-        this.$message({
-          type: 'info',
-          message: '已取消删除'
-        })
+        this.$message.info('已取消删除')
       })
     }
+  },
+  created () {
+    let self = this
+    self.axios.get('/project/index')
+      .then(function (res) {
+        console.log(res.data)
+        let data = res.data
+        if (data.success) {
+          let dirList = data.dirs
+          for (let i = 0; i < dirList.length; i++) {
+            self.projects.push({
+              id: self.projects.length,
+              name: dirList[i]
+            })
+          }
+        } else {
+          self.$message.warning(data.msg)
+        }
+      })
+      .catch(function (err) {
+        console.log(err)
+      })
   }
 }
 </script>

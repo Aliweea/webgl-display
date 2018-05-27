@@ -30,6 +30,7 @@ router.get('/project/index', (req, res, next) => {
 })
 
 router.get('/project/create', (req, res, next) => {
+  // console.log(req.query)
   try {
     let newDir = req.query.dir
     fs.mkdirSync(upload_dir + newDir)
@@ -46,13 +47,14 @@ router.get('/project/create', (req, res, next) => {
 })
 
 router.get('/project/delete', (req, res, next) => {
+  // console.log(req.query)
   try {
     let deletedDir = req.query.dir
     let path = upload_dir + deletedDir
     deleteFolder(path)
     res.json({
       success: true,
-      msg: "项目" + newDir + "删除成功"
+      msg: "项目" + deletedDir + "删除成功"
     })
   } catch (err) {
     res.json({
