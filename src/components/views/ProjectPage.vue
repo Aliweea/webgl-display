@@ -1,17 +1,12 @@
 <template>
   <el-container>
     <el-aside>
-      <div class="drag-box"><draggable></draggable></div>
-      <upload @upload="this.refs.draggable.addNew(filename)"></upload>
-
+      <div class="drag-box"><draggable ref="drag"></draggable></div>
+      <upload @upload="addNew"></upload>
     </el-aside>
 
-    <el-container>
-      <el-header style="text-align: center">
-        <h1>{{name}}</h1>
-
-      </el-header>
-    </el-container>
+    <el-main>
+    </el-main>
   </el-container>
 </template>
 
@@ -29,6 +24,10 @@ export default {
     }
   },
   methods: {
+    addNew (filename) {
+      console.log('add new')
+      this.$refs.drag.addFile(filename)
+    }
   },
   components: {
     upload, draggable

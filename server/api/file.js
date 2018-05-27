@@ -18,10 +18,20 @@ const upload = multer({
   storage: storage
 })
 
+router.post('/file/upload', upload.single('file'), (req, res, next) => {
+  // console.log(req.body.directory)
+  // console.log(req.file)
+  res.json({
+    success: true
+  })
+})
+
 router.get('/file/index', (req, res, next) => {
   try {
     let myDir = req.query.dir
     const files = fs.readdirSync(upload_dir + myDir)
+    // console.log(req.query.dir)
+    // console.log(files)
     res.json({
       files: files,
       success: true,
@@ -37,19 +47,13 @@ router.get('/file/index', (req, res, next) => {
   }
 })
 
-router.post('/file/upload', upload.single('file'), (req, res, next) => {
-  console.log(req.body.directory)
-  console.log(req.file)
-  res.json({
-    success: true
-  })
-})
-
 router.get('/file/delete', (req, res, next) => {
+  // console.log(req.query)
   try {
     let dir = req.query.dir
     let file = req.query.file
-    let path = upload_dir + deletedDir + '/' + file
+    let path = upload_dir + dir + '/' + file
+    // console.log(path)
     fs.unlinkSync(path)
     res.json({
       success: true,
@@ -58,7 +62,7 @@ router.get('/file/delete', (req, res, next) => {
   } catch (err) {
     res.json({
       success: false,
-      msg: err.msg
+      msg: err.message
     })
   }
 })

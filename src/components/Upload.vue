@@ -6,7 +6,6 @@
     accept=".obj"
     :http-request="myUpload"
     :before-upload="beforeUpload"
-    :before-remove="beforeRemove"
     :on-success="onSuccess"
     :file-list="fileList"
     :auto-upload="false"
@@ -35,16 +34,13 @@ export default {
   },
   methods: {
     myUpload (content) {
-      console.log('文件上传')
-      if (content === null) {
-        this.$message.info('请选择要上传的文件')
-      }
+      // console.log('文件上传')
       let formdata = new FormData()
       formdata.append('directory', this.projectName)
       formdata.append('file', content.file)
       this.axios.post(this.domain, formdata, this.config)
         .then((res) => {
-          console.log('文件上传成功')
+          // console.log(content.file.name)
           content.onSuccess('文件上传成功')
         }).catch((err) => {
           if (err.response) {
@@ -58,7 +54,7 @@ export default {
     },
     beforeUpload (file) {
       let type = file.name.split('.')[1]
-      console.log(type)
+      // console.log(type)
       const isOBJ = type === 'obj'
       if (!isOBJ) {
         this.$message.error('上传模型只能是 OBJ 格式!')
@@ -66,16 +62,24 @@ export default {
       return isOBJ
     },
     submitUpload () {
-      this.$refs.upload.submit()
+      if (this.$refs.upload.uploadFiles.length === 0) {
+        this.$message.warning('请选择要上传的文件')
+      } else {
+        this.$refs.upload.submit()
+      }
     },
     handleExceed (files, fileList) {
       this.$message.warning(`当前限制选择 10 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`)
     },
-    beforeRemove (file, fileList) {
-      return this.$confirm(`确定移除 ${file.name} ?`)
-    },
     onSuccess (response, file, fileList) {
-      // this.$refs.upload.clearFiles()
+      console.log('success')
+      this.$emit('upload', file.name)
+      for (let i = 0; i < fileList.length; i++) {
+        if (file.name === fileList[i].name) {
+          this.fileList = fileList.split(i, 1)
+          break
+        }
+      }
     }
   }
 }

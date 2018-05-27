@@ -4,12 +4,12 @@
       <template slot="title"><i class="el-icon-document"></i>文件列表</template>
       <el-menu-item
         v-for="(file, index) in files"
-        :index="file.title"
+        :index="file.name"
         :key="file.id"
         draggable="true"
         v-dragging="{ item: file, list: files, group: 'file' }">
         <a>
-          <span>{{file.id}}{{file.title}}</span>
+          <span>{{file.name}}</span>
           <el-button type="danger" icon="el-icon-delete" @click="deleteFile(index)"></el-button>
         </a>
       </el-menu-item>
@@ -24,31 +24,17 @@ export default {
     return {
       dragElement: null,
       lock: true,
-      files: [
-        {id: 1, title: '这里是列表1的标题'},
-        {id: 2, title: '这里是列表2的标题'},
-        {id: 3, title: '这里是列表3的标题'},
-        {id: 4, title: '这里是列表4的标题'},
-        {id: 5, title: '这里是列表5的标题'},
-        {id: 6, title: '这里是列表6的标题'},
-        {id: 7, title: '这里是列表7的标题'}
-      ],
-      order: []
+      files: [],
+      projectName: this.$route.params.name
     }
   },
   watch: {
-    order: {
-      handler (order) {
-
-      },
-      deep: true
-    }
   },
   methods: {
     addFile (filename) {
       this.files.push({
         id: this.files.length,
-        title: filename
+        name: filename.split('.')[0]
       })
     },
     deleteFile (index) {
@@ -59,24 +45,55 @@ export default {
         center: true
       }).then(() => {
         console.log(index)
-        this.files.splice(index, 1)
         // 在服务器将对应文件删除
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
+        let self = this
+        self.axios.get('/file/delete', {
+          params: {
+            dir: self.projectName,
+            file: self.files[index].name + '.obj'
+          }
+        }).then(function (res) {
+          console.log(res.data)
+          let data = res.data
+          if (data.success) {
+            self.files.splice(index, 1)
+            self.$message.success(data.msg)
+          } else {
+            self.$message.warning(data.msg)
+          }
+        }).catch(function (err) {
+          console.log(err.message)
         })
       }).catch(() => {
-        this.$message({
-          type: 'info',
-          message: '已取消删除'
-        })
+        this.$message.info('已取消删除')
       })
     }
+  },
+  created () {
+    console.log(this.projectName)
+    let self = this
+    self.axios.get('/file/index?dir=' + self.projectName)
+      .then(function (res) {
+        // console.log(res.data)
+        let data = res.data
+        if (data.success) {
+          let fileList = data.files
+          for (let i = 0; i < fileList.length; i++) {
+            self.addFile(fileList[i])
+          }
+        } else {
+          self.$message.warning(data.msg)
+        }
+      })
+      .catch(function (err) {
+        console.log(err.message)
+      })
   },
   mounted () {
     this.$dragging.$on('dragged', ({ value }) => {
       this.items = value.list
     })
+
     this.$dragging.$on('dragend', () => {
       console.log('---------------')
       for (var i in this.items) {
@@ -107,7 +124,7 @@ export default {
 .drag-list:hover{
   border: 1px solid #20a0ff;
 }
-.drag-title{
+.drag-name{
   font-weight: 400;
   line-height: 25px;
   margin: 10px 0;
