@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const fs = require('fs')
 const multer = require('multer')
+const util = require('../public/js/util')
 
 const upload_dir = 'server/public/obj/'
 
@@ -21,7 +22,9 @@ const upload = multer({
 router.post('/file/upload', upload.single('file'), (req, res, next) => {
   // console.log(req.body.directory)
   // console.log(req.file)
+  let filepath = upload_dir + req.body.directory + '/' + req.file.filename
   res.json({
+    center: util.findCenter(filepath),
     success: true
   })
 })
@@ -29,18 +32,28 @@ router.post('/file/upload', upload.single('file'), (req, res, next) => {
 router.get('/file/index', (req, res, next) => {
   try {
     let myDir = req.query.dir
-    const files = fs.readdirSync(upload_dir + myDir)
+    let files = fs.readdirSync(upload_dir + myDir)
     // console.log(req.query.dir)
     // console.log(files)
+    let models = []
+    for (var i = 0; i < files.length; i++) {
+      let filepath = upload_dir + myDir + '/' + files[i]
+      // console.log(filepath)
+      console.log(util.findCenter(filepath))
+      models.push({
+        name: files[i],
+        center: util.findCenter(filepath)
+      })
+    }
     res.json({
-      files: files,
+      models: models,
       success: true,
       msg: ''
     })
   } catch (err) {
     // handle the error
     res.json({
-      files: null,
+      models: null,
       success: false,
       msg: err.msg
     })

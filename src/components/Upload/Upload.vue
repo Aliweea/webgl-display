@@ -21,15 +21,16 @@
 
 <script>
 export default {
+  name: 'Upload',
+  props: ['projectName'],
   data () {
     return {
       domain: '/file/upload',
       config: {
         headers: {'Content-Type': 'multipart/form-data'}
       },
-      fileList: [
-      ],
-      projectName: this.$route.params.name
+      fileList: [],
+      curCenter: {}
     }
   },
   methods: {
@@ -38,10 +39,12 @@ export default {
       let formdata = new FormData()
       formdata.append('directory', this.projectName)
       formdata.append('file', content.file)
-      this.axios.post(this.domain, formdata, this.config)
+      let self = this
+      self.axios.post(self.domain, formdata, self.config)
         .then((res) => {
           // console.log(content.file.name)
           content.onSuccess('文件上传成功')
+          self.curCenter = res.data.center
         }).catch((err) => {
           if (err.response) {
             content.onError(`文件上传失败(${err.response.status})，${err.response.data}`)
@@ -73,7 +76,10 @@ export default {
     },
     onSuccess (response, file, fileList) {
       console.log('success')
-      this.$emit('upload', file.name)
+      this.$emit('upload', {
+        name: file.name,
+        center: this.curCenter
+      })
       for (let i = 0; i < fileList.length; i++) {
         if (file.name === fileList[i].name) {
           this.fileList = fileList.split(i, 1)
