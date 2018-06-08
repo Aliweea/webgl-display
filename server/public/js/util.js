@@ -1,5 +1,7 @@
 const fs = require('fs')
 
+const mtlDir = 'server/public/mtl'
+
 // calculate the center of obj model
 const findCenter = function (filepath) {
   try {
@@ -30,6 +32,17 @@ const findCenter = function (filepath) {
   }
 }
 
+// check if
+const isFileExist = function (filepath) {
+  try {
+    fs.accessSync(filepath, fs.constants.F_OK)
+    return true
+  } catch (err) {
+    // console.log(err.message)
+    return false
+  }
+}
+
 module.exports = {
-  findCenter
+  findCenter, isFileExist
 }

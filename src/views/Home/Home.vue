@@ -26,11 +26,23 @@
 </template>
 
 <script>
+import Store from '../../store'
+
+const projectKey = 'project-list'
+
 export default {
   name: 'ProjectList',
   data () {
     return {
       projects: []
+    }
+  },
+  watch: {
+    projects: {
+      handler (items) {
+        Store.save(projectKey, items)
+      },
+      deep: true
     }
   },
   methods: {
@@ -106,26 +118,31 @@ export default {
     }
   },
   created () {
-    let self = this
-    self.axios.get('/project/index')
-      .then(function (res) {
-        console.log(res.data)
-        let data = res.data
-        if (data.success) {
-          let dirList = data.dirs
-          for (let i = 0; i < dirList.length; i++) {
-            self.projects.push({
-              id: self.projects.length,
-              name: dirList[i]
-            })
+    var items = Store.fetch(projectKey)
+    if (items !== null) {
+      this.projects = items
+    } else {
+      let self = this
+      self.axios.get('/project/index')
+        .then(function (res) {
+          console.log(res.data)
+          let data = res.data
+          if (data.success) {
+            let dirList = data.dirs
+            for (let i = 0; i < dirList.length; i++) {
+              self.projects.push({
+                id: self.projects.length,
+                name: dirList[i]
+              })
+            }
+          } else {
+            self.$message.warning(data.msg)
           }
-        } else {
-          self.$message.warning(data.msg)
-        }
-      })
-      .catch(function (err) {
-        console.log(err)
-      })
+        })
+        .catch(function (err) {
+          console.log(err)
+        })
+    }
   }
 }
 </script>

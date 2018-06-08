@@ -4,11 +4,17 @@ const fs = require('fs')
 const multer = require('multer')
 const util = require('../public/js/util')
 
-const upload_dir = 'server/public/obj/'
+const objDir = 'server/public/obj/'
+const mtlDir = 'server/public/mtl'
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, upload_dir + req.body.directory + '/')
+    let type = file.originalname.split('.')[1]
+    if (type === 'obj') {
+      cb(null, objDir + req.body.directory + '/')
+    } else {
+      cb(null, mtlDir + req.body.directory + '/')
+    }
   },
   filename: function (req, file, cb) {
     cb(null, file.originalname)
@@ -20,29 +26,33 @@ const upload = multer({
 })
 
 router.post('/file/upload', upload.single('file'), (req, res, next) => {
-  // console.log(req.body.directory)
-  // console.log(req.file)
-  let filepath = upload_dir + req.body.directory + '/' + req.file.filename
-  res.json({
-    center: util.findCenter(filepath),
-    success: true
-  })
+  try {
+    let myDir = req.body.directory
+    let filename = req.file.filename.split('.')[0]
+    let mtlPath = mtlDir + myDir + '/' + filename + '.mtl'
+    res.json({
+      hasMtl: util.isFileExist(mtlPath),
+      success: true
+    })
+  } catch (err) {
+    console.log(err.message)
+  }
 })
 
 router.get('/file/index', (req, res, next) => {
   try {
     let myDir = req.query.dir
-    let files = fs.readdirSync(upload_dir + myDir)
-    // console.log(req.query.dir)
+    let files = fs.readdirSync(objDir + myDir)
     // console.log(files)
     let models = []
-    for (var i = 0; i < files.length; i++) {
-      let filepath = upload_dir + myDir + '/' + files[i]
-      // console.log(filepath)
-      console.log(util.findCenter(filepath))
+    for (let i = 0; i < files.length; i++) {
+      let filename = files[i].split('.')[0]
+      let mtlPath = mtlDir + myDir + '/' + filename + '.mtl'
+      let hasMtl = util.isFileExist(mtlPath)
+      // console.log(hasMtl)
       models.push({
-        name: files[i],
-        center: util.findCenter(filepath)
+        name: filename,
+        hasMtl: hasMtl
       })
     }
     res.json({
@@ -52,6 +62,7 @@ router.get('/file/index', (req, res, next) => {
     })
   } catch (err) {
     // handle the error
+    console.log(err.message)
     res.json({
       models: null,
       success: false,
@@ -64,15 +75,22 @@ router.get('/file/delete', (req, res, next) => {
   // console.log(req.query)
   try {
     let dir = req.query.dir
-    let file = req.query.file
-    let path = upload_dir + dir + '/' + file
-    // console.log(path)
-    fs.unlinkSync(path)
+    let name = req.query.name
+    let objPath = objDir + dir + '/' + name + '.obj'
+    let mtlPath = mtlDir + dir + '/' + name + '.mtl'
+    // console.log(objPath)
+    if (util.isFileExist(objPath)) {
+      fs.unlinkSync(objPath)
+    }
+    if (util.isFileExist(mtlPath)) {
+      fs.unlinkSync(mtlPath)
+    }
     res.json({
       success: true,
-      msg: "文件" + file + "删除成功"
+      msg: "模型" + name + "删除成功"
     })
   } catch (err) {
+    console.log(err.message)
     res.json({
       success: false,
       msg: err.message
