@@ -29,26 +29,29 @@ export default {
   },
   data () {
     return {
-      domain: '/file/upload',
+      domain: '/model/upload',
       config: {
         headers: {'Content-Type': 'multipart/form-data'}
       },
       fileList: [],
-      hasMtl: false
+      model: null
     }
   },
   methods: {
     myUpload (content) {
       // console.log('文件上传')
       let formdata = new FormData()
-      formdata.append('directory', this.pname)
+      formdata.append('pname', this.pname)
       formdata.append('file', content.file)
       let self = this
       self.axios.post(self.domain, formdata, self.config)
         .then((res) => {
-          // console.log(content.file.name)
-          content.onSuccess('文件上传成功')
-          this.hasMtl = res.data.hasMtl
+          var data = res.data
+          if (data.success) {
+            // console.log(data.model)
+            this.model = data.model
+            content.onSuccess(data.msg)
+          }
         }).catch((err) => {
           if (err.response) {
             content.onError(`文件上传失败(${err.response.status})，${err.response.data}`)
@@ -78,13 +81,10 @@ export default {
       this.$message.warning(`当前限制选择 10 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`)
     },
     onSuccess (response, file, fileList) {
-      // console.log('success')
+      console.log('success')
       let type = file.name.split('.')[1]
       if (type === 'obj') {
-        this.$emit('upload', {
-          name: file.name,
-          hasMtl: this.hasMtl
-        })
+        this.$emit('upload', this.model)
       }
       for (let i = 0; i < fileList.length; i++) {
         if (file.name === fileList[i].name) {

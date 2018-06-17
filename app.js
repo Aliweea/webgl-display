@@ -30,8 +30,9 @@ app.listen(3000, () => {
 })
 
 // 错误处理
-app.use((err, req, res, next) => {
-  res.status(442).send({ error: err.message })
-})
+// app.use((err, req, res, next) => {
+//   // res.status(442).send({ error: err.message })
+//   console.log(err.message)
+// })
 
 module.exports = app

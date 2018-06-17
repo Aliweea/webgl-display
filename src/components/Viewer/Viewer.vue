@@ -10,6 +10,7 @@ import * as TWEEN from '@tweenjs/tween.js'
 
 import { OBJLoader } from './js/OBJLoader'
 import { MTLLoader } from './js/MTLLoader'
+import { mapState } from 'vuex'
 
 const OrbitControls = require('three-orbitcontrols')
 
@@ -24,10 +25,6 @@ export default {
     pname: {
       type: String,
       default: ''
-    },
-    models: {
-      type: Array,
-      default: function () { return [] }
     },
     lights: {
       type: Array,
@@ -62,7 +59,6 @@ export default {
   },
   data () {
     return {
-      items: [],
       size: {
         width: this.width,
         height: this.height
@@ -89,12 +85,18 @@ export default {
       backgroundAlpha: 1
     }
   },
+  computed: {
+    ...mapState({
+      models: state => state.models
+    })
+  },
   watch: {
     intersected (val, oldVal) {
       if (val !== null) {
-        for (let i = 0; i < this.items.length; i++) {
-          if (val === this.items[i].obj) {
-            this.$emit('select', this.items[i].name)
+        const models = this.models
+        for (let i = 0; i < models.length; i++) {
+          if (val === models[i].obj) {
+            this.$emit('select', models[i].name)
             break
           }
         }
@@ -290,16 +292,16 @@ export default {
       this.renderer.render(this.scene, this.camera)
     },
     load () {
-      if (!this.models.length) return
+      let models = this.models
+      if (!models.length) return
       if (this.wrapper.children.length) {
-        // this.wrapper.remove.apply(this.wrapper, this.wrapper.children)
         this.wrapper.children = []
       }
-      this.models.forEach(model => {
-        this.addObject(model)
+      models.forEach((model, index) => {
+        this.addObject(index, model)
       })
     },
-    addObject (model) {
+    addObject (index, model) {
       if (!model) return
       const onLoad = (object) => {
         object.traverse(function (child) {
@@ -309,9 +311,9 @@ export default {
         })
         this.wrapper.add(object)
         this.updateCamera()
-        this.items.push({
-          id: model.id,
-          name: model.name,
+        // console.log(index, object)
+        this.$store.commit('addObject', {
+          index: index,
           obj: object
         })
         this.$emit('on-load')
@@ -332,23 +334,18 @@ export default {
           this.loader.load(model.name + '.obj', onLoad, onProgress, onError)
         }, onProgress, onError)
       } else {
+        // console.log(index, model)
         this.loader.load(model.name + '.obj', onLoad, onProgress, onError)
       }
     },
-    removeObject (model) {
-      for (let i = 0; i < this.items.length; i++) {
-        let item = this.items[i]
-        if (item.name === model.name) {
-          this.wrapper.remove(item.obj)
-          this.items.splice(i, 1)
-          this.updateCamera()
-        }
-      }
+    removeObject (index) {
+      this.wrapper.remove(this.models[index].obj)
+      this.updateCamera()
     },
     selectModel (name) {
       let self = this
       this.selected = name
-      this.items.forEach(function (element) {
+      this.models.forEach(function (element) {
         if (element.name !== name) {
           element.obj.traverse(function (child) {
             if (child instanceof THREE.Mesh) {
@@ -365,7 +362,7 @@ export default {
       })
     },
     unSelect () {
-      this.items.forEach(function (element) {
+      this.models.forEach(function (element) {
         element.obj.traverse(function (child) {
           if (child instanceof THREE.Mesh) {
             child.material.opacity = 1
@@ -388,7 +385,7 @@ export default {
       tween.start()
     },
     displayModel () {
-      const self = this
+      const models = this.models
       const objects = this.wrapper.children
       objects.forEach(obj => {
         obj.traverse(function (child) {
@@ -397,9 +394,9 @@ export default {
           }
         })
       })
-      for (let i = 0; i < this.models.length; i++) {
-        let index = this.models[i].id
-        let obj = this.items[index].obj
+      var self = this
+      for (let i = 0; i < models.length; i++) {
+        let obj = models[i].obj
         setTimeout(function () {
           self.setupTween(obj)
         }, i * 3000 + 1000)

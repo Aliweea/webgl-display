@@ -3,26 +3,27 @@
     <el-row class="el-menu-item">
       <el-col :span="4">
         <router-link tag="i" to="/"
-          class="el-icon-back" style="color: #c7b3e5;"></router-link>
+          class="el-icon-back back"></router-link>
       </el-col>
       <el-col :span="16" class="title">模型列表</el-col>
       <el-col :span="4">
-        <i class="el-icon-delete" @click="ifShow = !ifShow" style="color: #c7b3e5;"></i>
+        <i class="el-icon-delete delete" @click="ifShow = !ifShow"></i>
       </el-col>
     </el-row>
     <el-row class="el-menu-item"
-      v-for="(item, index) in items"
+      v-for="(item, index) in models"
       :index="item.name"
       :key="item.id"
+      @click.native="selectModel(index)"
       draggable="true"
-      v-dragging="{ item: item, list: items, group: 'item' }">
+      v-dragging="{ item: item, list: models, group: 'item' }">
       <el-col :span="16" :offset="4">
-        <span @click="selectModel(index)">{{item.name}}</span>
+        <span>{{item.name}}</span>
       </el-col>
       <el-col :span="4">
         <transition name="el-zoom-in-center">
           <i class="el-icon-close"
-            @click="deleteModel(index)"
+            @click.stop="deleteModel(index)"
             v-show="ifShow"
             style="color: #c7b3e5;"></i>
         </transition>
@@ -32,31 +33,22 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
   name: 'Draggable',
-  props: {
-    models: {
-      type: Array,
-      default: function () { return [] }
-    }
-  },
   data () {
     return {
-      dragElement: null,
+      items: [],
       lock: true,
-      items: this.models,
       selected: null,
-      clicked: null,
       ifShow: false
     }
   },
-  watch: {
-    models: {
-      handler: function (val, oldVal) {
-        this.items = val
-      },
-      deep: true
-    }
+  computed: {
+    ...mapState({
+      models: state => state.models
+    })
   },
   methods: {
     deleteModel (index) {
@@ -66,7 +58,7 @@ export default {
         type: 'warning',
         center: true
       }).then(() => {
-        console.log(index)
+        // console.log(index)
         this.$emit('delete', index)
       }).catch(() => {
         this.$message.info('已取消删除')
@@ -83,7 +75,8 @@ export default {
       this.items = value.list
     })
     this.$dragging.$on('dragend', () => {
-      this.$emit('order', this.items)
+      // this.$emit('order', this.items)
+      this.$store.dispatch('orderModels', this.items)
     })
   }
 }
@@ -92,6 +85,12 @@ export default {
 <style scoped>
 .title {
   font-size: 18px;
+}
+.back{
+  color: #c7b3e5;
+}
+.delete{
+  color: #c7b3e5;
 }
 .el-col {
   border-radius: 4px;

@@ -1,18 +1,15 @@
 <template>
-  <div>
+  <div class="page">
     <div class="aside">
       <div class="drag-box">
         <draggable :models="models"
-          @order="orderModels"
           @delete="deleteModel"
-          @select="selectModel"
-          v-if="models.length">
+          @select="selectModel">
         </draggable>
       </div>
       <upload class="upload"
-        :pname="projectName"
-        @upload="addModel2View"
-        v-if="projectName">
+        :pname="pname"
+        @upload="addModel2View">
       </upload>
     </div>
     <div class="main">
@@ -22,7 +19,10 @@
           @display="display"></toolbar>
       </div>
       <div class="model">
-        <viewer ref="viewer" :pname="projectName" :models="models" v-if="models.length"></viewer>
+        <viewer ref="viewer"
+          :pname="pname"
+          v-if="$store.state.endLoad">
+        </viewer>
       </div>
     </div>
   </div>
@@ -33,8 +33,7 @@ import upload from '../../components/Upload/Upload'
 import draggable from '../../components/Draggable/Draggable'
 import viewer from '../../components/Viewer/Viewer'
 import toolbar from '../../components/Toolbar/Toolbar'
-
-import Store from '../../store'
+import { mapState } from 'vuex'
 
 export default {
   name: 'ProjectPage',
@@ -43,54 +42,33 @@ export default {
   },
   data () {
     return {
-      projectName: this.$route.params.name,
-      models: []
+      pname: this.$route.params.name
     }
   },
-  watch: {
-    models: {
-      handler (models) {
-        Store.save(this.projectName, models)
-      },
-      deep: true
-    }
+  computed: {
+    ...mapState({
+      models: state => state.models
+    })
   },
   methods: {
-    addModel (model) {
-      this.models.push({
-        id: this.models.length,
-        name: model.name,
-        hasMtl: model.hasMtl
-      })
-    },
     addModel2View (model) {
-      this.addModel(model)
-      this.$refs.viewer.addObject(model)
+      const self = this
+      setTimeout(function () {
+        let index = self.models.length
+        self.$store.commit('addModel', {
+          id: model.id,
+          name: model.name,
+          hasMtl: model.hasMtl
+        })
+        self.$refs.viewer.addObject(index, model)
+      }, 2000)
     },
     deleteModel (index) {
-      // 在服务器将对应文件删除
-      let self = this
-      self.axios.get('/file/delete', {
-        params: {
-          dir: self.projectName,
-          name: self.models[index].name
-        }
-      }).then(function (res) {
-        console.log(res.data)
-        let data = res.data
-        if (data.success) {
-          self.models.splice(index, 1)
-          self.$message.success(data.msg)
-          self.$refs.viewer.removeObject(self.models[index])
-        } else {
-          self.$message.warning(data.msg)
-        }
-      }).catch(function (err) {
-        console.log(err.message)
+      this.$refs.viewer.removeObject(index)
+      this.$store.dispatch('deleteModel', {
+        index: index,
+        pname: this.pname
       })
-    },
-    orderModels (items) {
-      this.models = items
     },
     selectModel (index) {
       this.$refs.viewer.selectModel(this.models[index].name)
@@ -106,52 +84,45 @@ export default {
     }
   },
   created () {
-    console.log(this.projectName)
-    var items = Store.fetch(this.projectName)
-    if (items !== null) {
-      this.models = items
-    } else {
-      let self = this
-      self.axios.get('/file/index?dir=' + self.projectName)
-        .then(function (res) {
-          console.log(res.data)
-          let data = res.data
-          if (data.success) {
-            let models = data.models
-            for (let i = 0; i < models.length; i++) {
-              self.addModel(models[i])
-            }
-          } else {
-            self.$message.warning(data.msg)
-          }
-        })
-        .catch(function (err) {
-          console.log(err.message)
-        })
-    }
+    // this.$store.dispatch('loadModels', this.pname)
+  },
+  beforeRouteEnter (to, from, next) {
+    // do something
+    // 不能获取组件实例 ‘this’
+    next(vm => {
+      vm.$store.dispatch('loadModels', vm.pname)
+    })
+  },
+  beforeRouteLeave (to, from, next) {
+    // 导航离开该组件的对应路由时调用
+    // 可以访问组件实例 `this`
+    this.$store.dispatch('removeAllModels')
+    next()
   }
 }
 </script>
 
 <style scoped>
+.page{
+  width: 100%;
+  height: 100%;
+}
 .aside {
-  position: fixed;
-  left: 0px;
+  float: left;
   width: 300px;
   height: 100%;
+  background-color: #daf9ca;
 }
 .drag-box {
   height: 60%;
   overflow-y: scroll;
 }
 .upload {
-  height: 60%;
+  height: 40%;
   overflow-y: scroll;
 }
 .main {
-  position: absolute;
-  border: 0px;
-  left: 300px;
+  float: right;
   width: calc(100% - 300px);
   height: 100%;
 }
