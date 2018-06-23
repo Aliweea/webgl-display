@@ -54,8 +54,9 @@ export default new vuex.Store({
             })
           }
           commit('endLoad')
+          console.log(data.msg)
         } else {
-          self.$message.warning(data.msg)
+          console.log(data.msg)
         }
       }).catch(function (err) {
         console.log(err.message)
@@ -77,7 +78,7 @@ export default new vuex.Store({
         if (data.success) {
           console.log(data.msg)
         } else {
-          self.$message.warning(data.msg)
+          console.log(data.msg)
         }
       }).catch(function (err) {
         console.log(err.message)

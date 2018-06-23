@@ -22,7 +22,9 @@
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="150">
           <template slot-scope="{row, $index}">
-            <router-link :to="'/project/'+ row.name">
+            <router-link
+              :to="'/project/'+ row.name"
+              v-show="!row.editable">
               <el-button type="text" size="middle"> 查看 </el-button>
             </router-link>
             <el-button
@@ -39,6 +41,13 @@
             </el-button>
             <el-button
               class="button"
+              v-show="row.editable"
+              @click.native.prevent="editCancle($index)"
+              type="text" size="middle">取消
+            </el-button>
+            <el-button
+              class="button"
+              v-show="!row.editable"
               @click.native.prevent="deleteProject($index)"
               type="text" size="middle">删除
             </el-button>
@@ -152,7 +161,7 @@ export default {
         // console.log(res.data)
         let data = res.data
         if (data.success) {
-          // self.$message.success(data.msg)
+          self.$message.success(data.msg)
           self.projects.push({
             id: data.project.id,
             name: data.project.name,
@@ -177,6 +186,11 @@ export default {
       this.oldName = this.projects[index].name
       this.oldDesc = this.projects[index].description
       this.projects[index].editable = true
+    },
+    editCancle (index) {
+      this.projects[index].name = this.oldName
+      this.projects[index].description = this.oldDesc
+      this.projects[index].editable = false
     },
     editComfirm (index, row) {
       // 检查是否有改变

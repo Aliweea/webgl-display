@@ -105,7 +105,7 @@ export default {
 <style scoped>
 .page{
   width: 100%;
-  height: 100%;
+  height: 680px;
 }
 .aside {
   float: left;
